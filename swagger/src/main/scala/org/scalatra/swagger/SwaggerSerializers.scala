@@ -44,9 +44,6 @@ object SwaggerSerializers {
 
     private[this] val self = this
 
-    // since 2.4.0: anyway set as false by default
-    val strict: Boolean = false
-
     def withAuthorizationTypeSerializer(serializer: Serializer[AuthorizationType]): SwaggerFormats = new SwaggerFormats {
       override val customSerializers: List[Serializer[_]] = serializer :: SwaggerFormats.serializers
     }
@@ -62,7 +59,7 @@ object SwaggerSerializers {
       override val wantsBigDecimal: Boolean = self.wantsBigDecimal
       override val primitives: Set[Type] = self.primitives
       override val companions: List[(Class[_], AnyRef)] = self.companions
-      override val strict: Boolean = self.strict
+      override val strict: Formats = self.nonStrict
     }
 
     override def +(extraHints: TypeHints): SwaggerFormats = new SwaggerFormats {
@@ -75,7 +72,7 @@ object SwaggerSerializers {
       override val wantsBigDecimal: Boolean = self.wantsBigDecimal
       override val primitives: Set[Type] = self.primitives
       override val companions: List[(Class[_], AnyRef)] = self.companions
-      override val strict: Boolean = self.strict
+      override val strict: Formats = self.nonStrict
     }
 
     override def withCompanions(comps: (Class[_], AnyRef)*): SwaggerFormats = new SwaggerFormats {
@@ -88,7 +85,7 @@ object SwaggerSerializers {
       override val wantsBigDecimal: Boolean = self.wantsBigDecimal
       override val primitives: Set[Type] = self.primitives
       override val companions: List[(Class[_], AnyRef)] = comps.toList ::: self.companions
-      override val strict: Boolean = self.strict
+      override val strict: Formats = self.nonStrict
     }
 
     override def withDouble: SwaggerFormats = new SwaggerFormats {
@@ -101,7 +98,7 @@ object SwaggerSerializers {
       override val wantsBigDecimal: Boolean = false
       override val primitives: Set[Type] = self.primitives
       override val companions: List[(Class[_], AnyRef)] = self.companions
-      override val strict: Boolean = self.strict
+      override val strict: Formats = self.nonStrict
     }
 
     override def withBigDecimal: SwaggerFormats = new SwaggerFormats {
@@ -114,7 +111,7 @@ object SwaggerSerializers {
       override val wantsBigDecimal: Boolean = true
       override val primitives: Set[Type] = self.primitives
       override val companions: List[(Class[_], AnyRef)] = self.companions
-      override val strict: Boolean = self.strict
+      override val strict: Formats = self.nonStrict
     }
 
     override def withHints(hints: TypeHints): SwaggerFormats = new SwaggerFormats {
@@ -127,7 +124,7 @@ object SwaggerSerializers {
       override val wantsBigDecimal: Boolean = self.wantsBigDecimal
       override val primitives: Set[Type] = self.primitives
       override val companions: List[(Class[_], AnyRef)] = self.companions
-      override val strict: Boolean = self.strict
+      override val strict: Formats = self.nonStrict
     }
 
     override def lossless: SwaggerFormats = new SwaggerFormats {
@@ -135,7 +132,7 @@ object SwaggerSerializers {
     }
 
     override val customSerializers: List[Serializer[_]] = new AuthorizationTypeSerializer :: SwaggerFormats.serializers
-    override def ++(newSerializers: Traversable[Serializer[_]]): SwaggerFormats = newSerializers.foldLeft(this)(_ + _)
+    override def ++(newSerializers: Iterable[Serializer[_]]): SwaggerFormats = newSerializers.foldLeft(this)(_ + _)
     override def +(newSerializer: Serializer[_]): SwaggerFormats = new SwaggerFormats {
       override val customSerializers: List[Serializer[_]] = newSerializer :: SwaggerFormats.this.customSerializers
     }

@@ -46,7 +46,22 @@ trait SwaggerEngine[T <: SwaggerApi[_]] {
 
 object Swagger {
 
-  val excludes: Set[java.lang.reflect.Type] = Set(classOf[java.util.TimeZone], classOf[java.util.Date], classOf[DateTime], classOf[LocalDate], classOf[ReadableInstant], classOf[Chronology], classOf[DateTimeZone])
+  val excludes: Set[java.lang.reflect.Type] = Set(
+    classOf[java.util.TimeZone],
+    classOf[java.util.Date],
+    classOf[DateTime],
+    classOf[LocalDate],
+    classOf[ReadableInstant],
+    classOf[Chronology],
+    classOf[DateTimeZone],
+    classOf[java.time.OffsetDateTime],
+    classOf[java.time.ZonedDateTime],
+    classOf[java.time.LocalDateTime],
+    classOf[java.time.LocalDate],
+    classOf[java.time.LocalTime],
+    classOf[java.time.Instant],
+    classOf[java.time.chrono.Chronology],
+    classOf[java.time.ZoneOffset])
   val SpecVersion = "2.0"
 
   def collectModels[T: Manifest](alreadyKnown: Set[Model]): Set[Model] = collectModels(Reflector.scalaTypeOf[T], alreadyKnown)
@@ -378,7 +393,8 @@ object DataType {
     Set[Class[_]](classOf[LocalDate], classOf[java.time.LocalDate])
   private[this] def isDate(klass: Class[_]) = DateTypes.exists(_.isAssignableFrom(klass))
   private[this] val DateTimeTypes =
-    Set[Class[_]](classOf[JDate], classOf[DateTime], classOf[LocalDateTime], classOf[java.time.LocalDateTime], classOf[java.time.ZonedDateTime], classOf[java.time.OffsetDateTime])
+    Set[Class[_]](classOf[JDate], classOf[DateTime], classOf[LocalDateTime], classOf[java.time.LocalDateTime], classOf[java.time.ZonedDateTime], classOf[java.time.OffsetDateTime],
+      classOf[java.time.Instant])
   private[this] def isDateTime(klass: Class[_]) = DateTimeTypes.exists(_.isAssignableFrom(klass))
 
   private[this] def isCollection(klass: Class[_]) =

@@ -7,6 +7,8 @@ import org.scalatra.json.JsonSupport
 import org.scalatra.swagger.DataType.{ ContainerDataType, ValueDataType }
 import org.slf4j.LoggerFactory
 
+import scala.collection.immutable.ListMap
+
 /**
  * Trait that serves the resource and operation listings, as specified by the Swagger specification.
  */
@@ -144,11 +146,18 @@ trait SwaggerBaseBase extends Initializable with ScalatraBase { self: JsonSuppor
             ("name" -> swagger.apiInfo.license) ~
             ("url" -> swagger.apiInfo.licenseUrl)))) ~
             ("paths" ->
-              (docs.filter(_.apis.nonEmpty).flatMap {
+              ListMap(docs.filter(_.apis.nonEmpty).flatMap {
                 doc =>
                   doc.apis.collect {
                     case api: SwaggerEndpoint[_] =>
                       (api.path -> api.operations.map { operation =>
+                        val responses = operation.responseMessages.map { response =>
+                          (response.code.toString ->
+                            ("description", response.message) ~~
+                            response.responseModel.map { model =>
+                              List(JField("schema", JObject(JField("$ref", s"#/definitions/${model}"))))
+                            }.getOrElse(Nil))
+                        }.toMap
                         (operation.method.toString.toLowerCase -> (
                           ("operationId" -> operation.operationId) ~
                           ("summary" -> operation.summary) ~!
@@ -170,29 +179,24 @@ trait SwaggerBaseBase extends Initializable with ScalatraBase { self: JsonSuppor
                               })
                           }) ~
                           ("responses" ->
-                            ("200" ->
-                              (if (operation.responseClass.name == "void") {
-                                List(JField("description", "No response"))
-                              } else {
-                                List(JField("description", "OK"), JField("schema", generateDataType(operation.responseClass)))
-                              })) ~
-                              operation.responseMessages.map { response =>
-                                (response.code.toString ->
-                                  ("description", response.message) ~~
-                                  response.responseModel.map { model =>
-                                    List(JField("schema", JObject(JField("$ref", s"#/definitions/${model}"))))
-                                  }.getOrElse(Nil))
-                              }) ~!
-                              ("security" -> (operation.authorizations.flatMap { requirement =>
-                                swagger.authorizations.find(_.`keyname` == requirement).map {
-                                  case a: OAuth => (requirement -> a.scopes)
-                                  case b: ApiKey => (requirement -> List.empty)
-                                  case _ => (requirement -> List.empty)
-                                }
-                              }))))
-                      }.toMap)
-                  }.toMap
-              }.toMap)) ~
+                            (if (responses.nonEmpty && responses.keySet.exists(_.startsWith("2"))) responses else {
+                              responses + ("200" ->
+                                (if (operation.responseClass.name == "void") {
+                                  JObject(JField("description", "No response"))
+                                } else {
+                                  JObject(JField("description", "OK"), JField("schema", generateDataType(operation.responseClass)))
+                                }))
+                            })) ~!
+                            ("security" -> (operation.authorizations.flatMap { requirement =>
+                              swagger.authorizations.find(_.`keyname` == requirement).map {
+                                case a: OAuth => (requirement -> a.scopes)
+                                case b: ApiKey => (requirement -> List.empty)
+                                case _ => (requirement -> List.empty)
+                              }
+                            }))))
+                      })
+                  }
+              }: _*)) ~
               ("definitions" -> docs.flatMap { doc =>
                 doc.models.map {
                   case (name, model) =>
